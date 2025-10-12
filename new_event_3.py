@@ -1,4 +1,3 @@
-# app.py
 from scapy.all import IP, TCP, Raw, send
 import streamlit as st
 import pandas as pd
@@ -207,3 +206,4 @@ if st.button("DoS"):
     st.info("Escaneo inciado...")
     dos_attack_with_scapy(select_ip, duration=timer)
     st.success(f"Ataque finalizado a la Ip: {select_ip} durante {timer} s.")
+
