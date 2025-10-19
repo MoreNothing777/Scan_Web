@@ -4,20 +4,21 @@ Este proyecto utiliza Streamlit y Scapy para crear una interfaz gráfica que per
 <img width="1180" height="724" alt="image" src="https://github.com/user-attachments/assets/3407dbdb-8cac-49f7-afd1-6cae011f9df1" />
 
 ## Características
-Escaneo de Red: Escanea la red local para detectar dispositivos y obtener sus direcciones IP, MAC y nombres de dispositivos.
-Ataque DoS: Permite realizar un ataque DoS a una dirección IP seleccionada utilizando Scapy.
-Requisitos
-Python 3.7+
-Streamlit
-Scapy
-Pandas
-IPAddress
-Socket
-Time
-Subprocess
-Platform
-Netifaces
-Threading
+Escaneo de Red: Escanea la red local para detectar dispositivos y obtener sus direcciones IP, MAC y nombres de dispositivos.<br>
+Ataque DoS: Permite realizar un ataque DoS a una dirección IP seleccionada utilizando Scapy.<br>
+
+## Requisitos
+Python 3.7+<br>
+Streamlit<br>
+Scapy<br>
+Pandas<br>
+IPAddress<br>
+Socket<br>
+Time<br>
+Subprocess<br>
+Platform<br>
+Netifaces<br>
+Threading<br>
 
 ## Código
 El código principal se encuentra en app.py y utiliza las siguientes bibliotecas:
